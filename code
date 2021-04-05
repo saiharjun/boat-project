@@ -1,0 +1,133 @@
+#include<SoftwareSerial.h>
+#include <dht.h>
+const int motorPin1 = 9;  // Pin  2 of L293
+const int motorPin2 = 10; // Pin  7 of L293
+const int motorPin3 = 11; // Pin 10 of L293
+const int motorPin4 = 12;  // Pin 15 of L293
+//const int BTState = 8;
+
+
+int sensorPin = A0; // select the input pin for the LDR
+
+int sensorValue = 0; // variable to store the value coming from the sensor
+
+
+int buzzer = 8; // Output pin for Buzzer
+
+int state;
+int flag=0;               // Makes sure that the serial only prints once the state
+const int trigPin = 6;
+const int echoPin = 7;
+// defines variables
+long duration;
+int distance;
+
+dht DHT;
+
+#define DHT11_PIN 4
+void setup() {
+    // Set pins as outputs:
+    pinMode(motorPin1, OUTPUT);
+    pinMode(motorPin2, OUTPUT);
+    pinMode(motorPin3, OUTPUT);
+    pinMode(motorPin4, OUTPUT);
+  //  pinMode(BTState, INPUT);    
+    pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+    pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+    pinMode(buzzer,OUTPUT);
+
+    // Initialize serial communication at 9600 bits per second:
+    Serial.begin(9600);
+}
+ 
+void loop() {
+    // if connection is lost... stop the boat!
+   // if(digitalRead(BTState)==LOW) { state='S'; }
+    
+    // If some data is sent, read it and save it in "state"
+    if(Serial.available() > 0){     
+      state = Serial.read();   
+      flag=0;
+    }
+     
+    /***********************Forward****************************/
+    // If the "state" is 'F', boat will go forward
+    if (state == 'F') {
+        digitalWrite(motorPin1,HIGH); digitalWrite(motorPin2, LOW); 
+        digitalWrite(motorPin4, HIGH); digitalWrite(motorPin3, LOW);
+        if(flag == 0){ Serial.println("k_roBOAT: Forward"); flag=1;}
+    }
+    /***********************Backward****************************/
+    // If the "state" is 'B', boat will go backward
+    else if (state == 'B') {
+      digitalWrite(motorPin1, LOW); digitalWrite(motorPin2, HIGH); 
+        digitalWrite(motorPin4, LOW ); digitalWrite(motorPin3, HIGH);
+        if(flag == 0){ Serial.println("k_roBoat: Backward"); flag=1;}
+    }
+    /***************************Right*****************************/
+    // If the "state" is 'R', boat will turn left
+    else if (state == 'R') {
+        digitalWrite(motorPin2, HIGH);digitalWrite(motorPin1, LOW); 
+        digitalWrite(motorPin3, LOW);digitalWrite(motorPin4, HIGH);
+        
+        if(flag == 0){ Serial.println("k_roBoat: Right"); flag=1;}
+    }
+    /***************************Left*****************************/
+    // If the "state" is 'L', boat will turn right
+    else if (state == 'L') {
+        digitalWrite(motorPin1,HIGH);digitalWrite(motorPin2,LOW);
+        digitalWrite(motorPin3,HIGH);digitalWrite(motorPin4,LOW);   
+        
+        if(flag == 0){ Serial.println("k_roBoat: Left"); flag=1;}
+    }
+    /**************************Stop********************************/
+    else if (state == 'S'){
+        digitalWrite(motorPin1,LOW); digitalWrite(motorPin2, LOW);  
+        digitalWrite(motorPin3,LOW); digitalWrite(motorPin4 ,LOW);
+        if(flag == 0){ Serial.println("k_roBoat: Stop!!"); flag=1;}
+    }
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    // Sets the trigPin on HIGH state for 10 micro seconds
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    duration = pulseIn(echoPin, HIGH);
+    // Calculating the distance
+    distance= duration*0.034/2;
+    // Prints the distance on the Serial Monitor
+    if(distance<5){
+        digitalWrite(motorPin1,LOW); digitalWrite(motorPin2, LOW);  
+        digitalWrite(motorPin3,LOW); digitalWrite(motorPin4 ,LOW);
+        if(flag == 0){ Serial.println("Obstacle detected!!"); flag=1;}
+    }
+
+    sensorValue = analogRead(sensorPin);
+
+//Serial.println(sensorValue);
+
+    if (sensorValue < 100 && sensorValue > 0)
+
+    {
+
+      Serial.println("Fire Detected");
+
+      digitalWrite(buzzer,HIGH);
+
+      delay(2000);
+
+    }
+
+    digitalWrite(buzzer,LOW);
+int chk = DHT.read11(DHT11_PIN);
+ Serial.print("Temp: ");
+  Serial.print(DHT.temperature);
+  Serial.print((char)223);
+  Serial.println("C");
+  Serial.print("Humidity: ");
+  Serial.print(DHT.humidity);
+  Serial.println("%");
+  delay(1000);
+
+}
